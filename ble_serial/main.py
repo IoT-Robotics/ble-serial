@@ -35,9 +35,13 @@ class Main():
             help='BLE host adapter number to use')
         parser.add_argument('-m', '--mtu', dest='mtu', required=False, default=20, type=int,
             help='Max. bluetooth packet data size in bytes used for sending')
-        parser.add_argument('-w', '--write-uuid', dest='write_uuid', required=False,
+
+        server_mode = True
+        parser.add_argument('-s', '--service-uuid', dest='service_uuid', required=server_mode,
+            help='The service to create for the server')
+        parser.add_argument('-w', '--write-uuid', dest='write_uuid', required=server_mode,
             help='The GATT characteristic to write the serial data, you might use "ble-scan -d" to find it out')
-        parser.add_argument('-r', '--read-uuid', dest='read_uuid', required=False,
+        parser.add_argument('-r', '--read-uuid', dest='read_uuid', required=server_mode,
             help='The GATT characteristic to subscribe to notifications to read the serial data')
         parser.add_argument('--permit', dest='mode', required=False, default='rw', choices=['ro', 'rw', 'wo'],
             help='Restrict transfer direction on bluetooth: read only (ro), read+write (rw), write only (wo)')
@@ -65,7 +69,7 @@ class Main():
                 self.uart.set_receiver(self.bt.queue_send)
 
             self.uart.start()
-            await self.bt.setup_chars(args.write_uuid, args.read_uuid, args.mode)
+            await self.bt.setup_chars(args.service_uuid, args.write_uuid, args.read_uuid, args.mode)
             await self.bt.start(args.device, args.addr_type, args.adapter, args.timeout)
 
             logging.info('Running main loop!')
