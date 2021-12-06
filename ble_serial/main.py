@@ -2,7 +2,7 @@ import logging, sys, argparse, time, asyncio
 from bleak.exc import BleakError
 from ble_serial import platform_uart as UART
 from ble_serial import DEFAULT_PORT, DEFAULT_PORT_MSG
-from ble_serial.bluetooth.ble_interface import BLE_interface
+from ble_serial.bluetooth.ble_server import BLE_server
 from ble_serial.log.fs_log import FS_log, Direction
 from ble_serial.log.console_log import setup_logger
 
@@ -55,7 +55,7 @@ class Main():
         loop.set_exception_handler(self.excp_handler)
         try:
             self.uart = UART(args.port, loop, args.mtu)
-            self.bt = BLE_interface()
+            self.bt = BLE_server()
             if args.filename:
                 self.log = FS_log(args.filename, args.binlog)
                 self.bt.set_receiver(self.log.middleware(Direction.BLE_IN, self.uart.queue_write))
@@ -65,8 +65,8 @@ class Main():
                 self.uart.set_receiver(self.bt.queue_send)
 
             self.uart.start()
-            await self.bt.connect(args.device, args.addr_type, args.adapter, args.timeout)
             await self.bt.setup_chars(args.write_uuid, args.read_uuid, args.mode)
+            await self.bt.start(args.device, args.addr_type, args.adapter, args.timeout)
 
             logging.info('Running main loop!')
             main_tasks = {
